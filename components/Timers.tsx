@@ -59,6 +59,7 @@ const MultiTimer = () => {
 
   const resetTimer = (index: number) => {
     const defaults = [5, 15, 25, 35, 45, 55];
+    setAlarm([]);
     setTimers((prev) => {
       const newTimers = [...prev];
       newTimers[index] = { second: defaults[index], isRunning: false };
