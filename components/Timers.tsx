@@ -6,18 +6,19 @@ interface Timer {
   second: number;
   minute: number;
   isRunning: boolean;
+  name: string;
 }
 
 const MultiTimer = () => {
   const initialTimers: Timer[] = [
-    { minute: 1, second: 10, isRunning: false },
-    { minute: 2, second: 10, isRunning: false },
-    { minute: 3, second: 10, isRunning: false },
+    { minute: 1, second: 10, isRunning: false, name: "Timer1" },
+    { minute: 2, second: 10, isRunning: false, name: "Timer2" },
+    { minute: 3, second: 10, isRunning: false, name: "Timer3" },
   ];
 
-  const [userInput, setUserInput] = useState(
-    Array(3).fill({ minute: "", second: "" }),
-  );
+  // const [userInput, setUserInput] = useState(
+  //   Array(3).fill({ minute: "", second: "" }),
+  // );
 
   const [timerNumber, setTimerNumber] = useState<number>(3);
   const [displayButton, setDisplayButton] = useState<boolean>(false);
@@ -98,29 +99,35 @@ const MultiTimer = () => {
 
   const handleTimerInputChange = (
     index: number,
-    field: "minute" | "second",
+    field: "minute" | "second" | "name",
     value: string,
   ) => {
-    const intValue = value === "" ? 0 : parseInt(value, 10);
-    if (isNaN(intValue) || intValue < 0) return;
+    let newValue: string | number = value;
 
-    if (field === "second" && intValue > 59) return;
+    if (field === "minute" || field === "second") {
+      const intValue = value === "" ? 0 : parseInt(value, 10);
+      if (isNaN(intValue) || intValue < 0) return;
+
+      if (field === "second" && intValue > 59) return;
+
+      newValue = intValue;
+    }
 
     setTimers((prev) =>
       prev.map((timer, i) => {
         if (i !== index) return timer;
 
-        if (isAllRunning || isSequentialRunning) {
-          return timer;
-        } else if (isManualRunning) {
-          if (timer.isRunning) {
+        if (field !== "name") {
+          if (isAllRunning || isSequentialRunning) {
+            return timer;
+          } else if (isManualRunning && timer.isRunning) {
             return timer;
           }
         }
 
         return {
           ...timer,
-          [field]: intValue,
+          [field]: newValue,
         };
       }),
     );
@@ -160,6 +167,7 @@ const MultiTimer = () => {
       setIsSequentialRunning(false);
       setIsManualRunning(false);
       setCurrentSeqIndex(null);
+      setDisplayButton(false);
     }
   };
 
@@ -176,6 +184,7 @@ const MultiTimer = () => {
       setCurrentSeqIndex(0);
       setIsAllRunning(false);
       setIsManualRunning(false);
+      setDisplayButton(false);
     }
   };
 
@@ -205,6 +214,12 @@ const MultiTimer = () => {
               handleTimerInputChange(index, "second", value)
             }
           />
+          <TextInput
+            style={{ borderWidth: 1, width: 60, padding: 5 }}
+            value={timer.name}
+            onChangeText={(text) => handleTimerInputChange(index, "name", text)}
+            placeholder={`Timer ${index + 1}`}
+          />
         </View>
       ))}
 
@@ -212,7 +227,7 @@ const MultiTimer = () => {
         <View style={Styles.timerNumberButtonContainer}>
           {[1, 2, 3, 4, 5, 6].map((num, index) => (
             <View key={index} style={Styles.timerButton}>
-              <Button title={`${num}`} onPress={() => setTimerNumber(num)} />
+              <Button title={`${num}`} onPress={() => {}} />
             </View>
           ))}
         </View>
@@ -220,12 +235,16 @@ const MultiTimer = () => {
           {timers.slice(0, timerNumber).map((timer, index) => (
             <View>
               <View key={index} style={Styles.timer}>
-                <Text
+                {/* <Text
                   style={Styles.text}
-                >{`Timer ${index + 1} ${String(timer.minute).padStart(2, "0")} : ${String(timer.second).padStart(2, "0")}`}</Text>
+                >{`${timer.name} ${String(timer.minute).padStart(2, "0")} : ${String(timer.second).padStart(2, "0")}`}</Text> */}
+                <Text style={Styles.text}>{timer.name}</Text>
+                <Text style={Styles.text}>
+                  {`${String(timer.minute).padStart(2, "0")} : ${String(timer.second).padStart(2, "0")}`}
+                </Text>
                 {alarm[index] && (
                   <Text style={Styles.alarmText}>
-                    Timer {index + 1} finished!
+                    {timer.name} finished!
                   </Text>
                 )}
 
