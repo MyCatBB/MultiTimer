@@ -4,18 +4,16 @@ import Styles from "../styles/styles";
 
 interface Timer {
   second: number;
+  minute: number;
   isRunning: boolean;
 }
 
 const MultiTimer = () => {
   const [timerNumber, setTimerNumber] = useState<number>(3);
   const initialTimers: Timer[] = [
-    { second: 5, isRunning: false },
-    { second: 15, isRunning: false },
-    { second: 25, isRunning: false },
-    { second: 35, isRunning: false },
-    { second: 45, isRunning: false },
-    { second: 55, isRunning: false },
+    { minute: 5, second: 5, isRunning: false },
+    { minute: 15, second: 15, isRunning: false },
+    { minute: 25, second: 25, isRunning: false },
   ];
 
   const [timers, setTimers] = useState<Timer[]>(initialTimers);
@@ -24,80 +22,86 @@ const MultiTimer = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setTimers((prevTimers) => {
-        return prevTimers.map((timer, index) => {
-          if (!timer.isRunning || timer.second <= 0) return timer;
+        const newTimers = prevTimers.map((timer, index) => {
+          if (!timer.isRunning) return timer;
 
-          const newSecond = timer.second - 1;
+          let { minute, second } = timer;
 
-            if( newSecond === 0) {
-                setAlarm((prevAlarm) => {
-                    const newAlarm = [...prevAlarm];
-                    newAlarm[index] = 'Alarm!';
-                    return newAlarm;
-                })
+          if (minute === 0 && second === 0) {
+            return { ...timer, isRunning: false };
+          }
+
+          if (second === 0) {
+            if (minute > 0) {
+              minute -= 1;
+              second = 59;
             }
+          } else {
+            second -= 1;
+          }
 
           return {
             ...timer,
-            second: newSecond < 0 ? 0 : newSecond,
-            isRunning: newSecond <= 0 ? false : timer.isRunning,
+            minute,
+            second,
+            isRunning: minute !== 0 || second !== 0,
           };
         });
+
+        return newTimers;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timerNumber]);
+  }, []);
 
-  const stopTimer = (index: number) => {
+  const toggleTimer = (index: number) => {
     setTimers((prev) => {
-      const newTimers = [...prev];
-      newTimers[index].isRunning = !newTimers[index].isRunning;
-      return newTimers;
-    });
-  };
-
-  const resetTimer = (index: number) => {
-    const defaults = [5, 15, 25, 35, 45, 55];
-    setAlarm([]);
-    setTimers((prev) => {
-      const newTimers = [...prev];
-      newTimers[index] = { second: defaults[index], isRunning: false };
-      return newTimers;
+      return prev.map((timer, i) =>
+        i === index ? { ...timer, isRunning: !timer.isRunning } : timer,
+      );
     });
   };
 
   return (
-    <View style={Styles.timerContainer}>
-      <View style={Styles.timerNumberButtonContainer}>
-        {[1, 2, 3, 4, 5, 6].map((num) => (
-          <View style={Styles.timerButton}>
-            <Button
-              key={num}
-              title={`${num}`}
-              onPress={() => setTimerNumber(num)}
-            />
-          </View>
-        ))}
+    <View style={Styles.multiTimerContainer}>
+      <View style={Styles.favoriteAndTimerContainer}>
+        <View style={Styles.timerNumberButtonContainer}>
+          {[1, 2, 3, 4, 5, 6].map((num, index) => (
+            <View key={index} style={Styles.timerButton}>
+              <Button title={`${num}`} onPress={() => setTimerNumber(num)} />
+            </View>
+          ))}
+        </View>
+        <View style={Styles.timerContainer}>
+          {timers.slice(0, timerNumber).map((timer, i) => (
+            <View>
+              <View key={i} style={Styles.timer}>
+                <Text
+                  style={Styles.text}
+                >{`Timer ${i + 1}: ${String(timer.minute).padStart(2, "0")} : ${String(timer.second).padStart(2, "0")}`}</Text>
+                {alarm[i] && <Text style={Styles.alarmText}>{alarm[i]}</Text>}
+
+                <View style={Styles.button}>
+                  {/* <Button title="Reset" onPress={() => resetTimer(i)} /> */}
+                </View>
+              </View>
+              <View style={Styles.button}>
+                <Button
+                  title={timer.isRunning ? "Pause" : "Start"}
+                  onPress={() => toggleTimer(i)}
+                />
+              </View>
+            </View>
+          ))}
+        </View>
       </View>
 
-      {timers.slice(0, timerNumber).map((timer, i) => (
-        <View key={i} style={Styles.timer}>
-          <Text
-            style={Styles.text}
-          >{`Timer ${i + 1}: ${timer.second} sec`}</Text>
-          {alarm[i] && <Text style={Styles.alarmText}>{alarm[i]}</Text>}
-          <View style={Styles.button}>
-            <Button
-              title={timer.isRunning ? "Stop" : "Start"}
-              onPress={() => stopTimer(i)}
-            />
-          </View>
-          <View style={Styles.button}>
-            <Button title="Reset" onPress={() => resetTimer(i)} />
-          </View>
-        </View>
-      ))}
+      <View>
+        <Button title={"Start at the same time"} />
+        <Button title={"Start one after the other"} />
+        <Button title={"Start manually"} />
+      </View>
     </View>
   );
 };
