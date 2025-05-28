@@ -6,11 +6,11 @@ const Styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "black",
     borderRadius: 10,
-    width: 500
+    width: 500,
   },
   favoriteAndTimerContainer: {
     flex: 1,
-    flexDirection: "row"
+    flexDirection: "row",
   },
   timerContainer: {
     flex: 1,
