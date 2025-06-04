@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, Button, TextInput, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  Button,
+  TextInput,
+  TouchableOpacity,
+  AppState,
+  AppStateStatus,
+} from "react-native";
 import Styles from "../styles/styles";
 
 interface Timer {
@@ -17,29 +25,68 @@ const MultiTimer = () => {
     { id: 2, minute: 3, second: 10, isRunning: false, name: "비빔면" },
   ];
 
-  // const [userInput, setUserInput] = useState(
-  //   Array(3).fill({ minute: "", second: "" }),
-  // );
-
   const [timerNumber, setTimerNumber] = useState<number>(3);
   const [displayButton, setDisplayButton] = useState<boolean>(false);
-
   const [timers, setTimers] = useState<Timer[]>(initialTimers);
   const [alarm, setAlarm] = useState<boolean[]>(new Array(3).fill(false));
-
   const [isAllRunning, setIsAllRunning] = useState(false);
   const [isSequentialRunning, setIsSequentialRunning] = useState(false);
   const [isManualRunning, setIsManualRunning] = useState(false);
   const [currentSeqIndex, setCurrentSeqIndex] = useState<number | null>(null);
+  const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
+
+  const backgroundTime = useRef<number | null>(null);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (appState.match(/active/) && nextAppState === "background") {
+        backgroundTime.current = Date.now();
+      }
+      if (appState.match(/background/) && nextAppState === "active") {
+        if (backgroundTime.current) {
+          const elapsed = Math.floor((Date.now() - backgroundTime.current) / 1000);
+          if (elapsed > 0) {
+            setTimers((prevTimers) =>
+              prevTimers.map((timer) => {
+                if (!timer.isRunning) return timer;
+                let totalSeconds = timer.minute * 60 + timer.second - elapsed;
+                if (totalSeconds <= 0) {
+                  setAlarm((prev) => {
+                    const updated = [...prev];
+                    updated[timer.id] = true;
+                    return updated;
+                  });
+                  return { ...timer, minute: 0, second: 0, isRunning: false };
+                }
+                const minute = Math.floor(totalSeconds / 60);
+                const second = totalSeconds % 60;
+                return { ...timer, minute, second };
+              }),
+            );
+          }
+        }
+      }
+      setAppState(nextAppState);
+    });
+
+    return () => subscription.remove();
+  }, [appState]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setTimers((prevTimers) => {
-        const newTimers = prevTimers.map((timer) => {
+        return prevTimers.map((timer) => {
           if (!timer.isRunning) return timer;
 
           let { minute, second } = timer;
-          const isFinished = minute === 0 && second === 0;
+          if (minute === 0 && second === 0) {
+            setAlarm((prev) => {
+              const updated = [...prev];
+              updated[timer.id] = true;
+              return updated;
+            });
+            return { ...timer, isRunning: false };
+          }
 
           if (second === 0) {
             if (minute > 0) {
@@ -50,24 +97,12 @@ const MultiTimer = () => {
             second -= 1;
           }
 
-          if (isFinished) {
-            setAlarm((prev) => {
-              const updated = [...prev];
-              updated[timer.id] = true;
-              return updated;
-            });
-            return { ...timer, isRunning: false };
-          }
-
           return {
             ...timer,
             minute,
             second,
-            isRunning: !isFinished,
           };
         });
-
-        return newTimers;
       });
     }, 1000);
 
@@ -108,19 +143,19 @@ const MultiTimer = () => {
     if (field === "minute" || field === "second") {
       const intValue = value === "" ? 0 : parseInt(value, 10);
       if (isNaN(intValue) || intValue < 0) return;
-
       if (field === "second" && intValue > 59) return;
-
       newValue = intValue;
     }
 
     setTimers((prev) =>
       prev.map((timer) => {
-        // if (i !== index) return timer;
-
-        if (isAllRunning || isSequentialRunning || (isManualRunning && timer.isRunning)) {
-        return timer;
-      }
+        if (
+          isAllRunning ||
+          isSequentialRunning ||
+          (isManualRunning && timer.isRunning)
+        ) {
+          return timer;
+        }
 
         return {
           ...timer,
@@ -134,7 +169,9 @@ const MultiTimer = () => {
     if (displayButton) {
       setTimers((prev) =>
         prev.map((timer) =>
-          timer.id === index ? { ...timer, isRunning: !timer.isRunning } : timer,
+          timer.id === index
+            ? { ...timer, isRunning: !timer.isRunning }
+            : timer,
         ),
       );
       setIsManualRunning(true);
@@ -174,9 +211,7 @@ const MultiTimer = () => {
       setIsSequentialRunning(false);
       setCurrentSeqIndex(null);
     } else {
-      setTimers((prev) =>
-        prev.map((t) => ({ ...t, isRunning: t.id === 0 })),
-      );
+      setTimers((prev) => prev.map((t) => ({ ...t, isRunning: t.id === 0 })));
       setIsSequentialRunning(true);
       setCurrentSeqIndex(0);
       setIsAllRunning(false);
@@ -184,15 +219,6 @@ const MultiTimer = () => {
       setDisplayButton(false);
     }
   };
-
-  //   const resetTimer = (index: number) => {
-  //   const defaults = [5, 15, 25, 35, 45, 55];
-  //   setTimers((prev) => {
-  //     const newTimers = [...prev];
-  //     newTimers[index] = { second: defaults[index], isRunning: false };
-  //     return newTimers;
-  //   });
-  // };
 
   return (
     <View style={Styles.multiTimerContainer}>
@@ -203,7 +229,7 @@ const MultiTimer = () => {
         >
           <Text>Timer</Text>
           <TextInput
-            style={{ borderWidth: 1, width: 60, padding: 5 }}
+            style={{ borderWidth: 1, width: 60, padding: 5, fontSize: 10 }}
             keyboardType="numeric"
             placeholder="Min"
             value={timer.minute.toString()}
@@ -212,7 +238,7 @@ const MultiTimer = () => {
             }
           />
           <TextInput
-            style={{ borderWidth: 1, width: 60, padding: 5 }}
+            style={{ borderWidth: 1, width: 60, padding: 5, fontSize: 10 }}
             keyboardType="numeric"
             placeholder="Sec"
             value={timer.second.toString()}
@@ -221,9 +247,11 @@ const MultiTimer = () => {
             }
           />
           <TextInput
-            style={{ borderWidth: 1, width: 60, padding: 5 }}
+            style={{ borderWidth: 1, width: 60, padding: 5, fontSize: 10 }}
             value={timer.name}
-            onChangeText={(text) => handleTimerInputChange(timer.id, "name", text)}
+            onChangeText={(text) =>
+              handleTimerInputChange(timer.id, "name", text)
+            }
             placeholder={`Timer ${timer.id + 1}`}
           />
         </View>
@@ -239,23 +267,18 @@ const MultiTimer = () => {
         </View>
         <View style={Styles.timerMainContainer}>
           <View style={Styles.timerContainer}>
-            {timers.slice(0, timerNumber).map((timer) => (
-              <View>
-                <View key={timer.id} style={Styles.timer}>
-                  {/* <Text
-                  style={Styles.text}
-                >{`${timer.name} ${String(timer.minute).padStart(2, "0")} : ${String(timer.second).padStart(2, "0")}`}</Text> */}
+            {timers.map((timer) => (
+              <View key={timer.id}>
+                <View style={Styles.timer}>
                   <Text style={Styles.text}>{timer.name}</Text>
                   <Text style={Styles.text}>
-                    {`${String(timer.minute).padStart(2, "0")} : ${String(timer.second).padStart(2, "0")}`}
+                    {`${String(timer.minute).padStart(2, "0")} : ${String(
+                      timer.second,
+                    ).padStart(2, "0")}`}
                   </Text>
                   {alarm[timer.id] && (
                     <Text style={Styles.alarmText}>{timer.name} finished!</Text>
                   )}
-
-                  <View style={Styles.button}>
-                    {/* <Button title="Reset" onPress={() => resetTimer(i)} /> */}
-                  </View>
                 </View>
                 <View style={Styles.button}>
                   {displayButton && (
@@ -274,7 +297,7 @@ const MultiTimer = () => {
               style={Styles.functionalButton}
             >
               <Text style={Styles.functionalButtonText}>
-                {isAllRunning ? "Pause" : "Start\n at the same time"}
+                {isAllRunning ? "Pause" : "Start\n same time"}
               </Text>
             </TouchableOpacity>
 
@@ -283,7 +306,7 @@ const MultiTimer = () => {
               style={Styles.functionalButton}
             >
               <Text style={Styles.functionalButtonText}>
-                {isSequentialRunning ? "Pause" : "Start\n one after the other"}
+                {isSequentialRunning ? "Pause" : "Start\n one after"}
               </Text>
             </TouchableOpacity>
 

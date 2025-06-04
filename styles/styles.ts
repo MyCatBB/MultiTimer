@@ -6,7 +6,9 @@ const Styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "black",
     borderRadius: 10,
-    width: 900,
+    width: "100%",
+    height: "100%",
+    fontSize: 10
   },
   favoriteAndTimerContainer: {
     flex: 1,
@@ -23,28 +25,29 @@ const Styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
   },
-  timerNumberButtonContainer: { flexDirection: "column", margin: 30 },
-  timerButton: { margin: 10 },
+  timerNumberButtonContainer: { flexDirection: "column", margin: 10 },
+  timerButton: { margin: 2 },
   timer: {
-    margin: 10,
+    margin: 5,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "black",
     borderRadius: 10,
     flexDirection: "column",
-    width: 200,
+    width: 100,
+    fontSize: 10
   },
   button: { margin: 10 },
-  text: { fontSize: 20, margin: 10 },
+  text: { fontSize: 10, margin: 10 },
   alarmText: { fontSize: 20, margin: 10, color: "red" },
   functionalButtonContainer: {
     flexDirection: "row",
   },
   functionalButton: {
     backgroundColor: "#007bff",
-    margin: 10,
-    width: 200,
+    margin: 5,
+    width: 100,
     height: 60,
     borderRadius: 5,
     alignItems: "center",
@@ -55,7 +58,6 @@ const Styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     flexWrap: "wrap",
-    fontSize: 18
   }
 });
 
