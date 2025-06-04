@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, Button, TextInput } from "react-native";
+import { View, Text, Button, TextInput, TouchableOpacity } from "react-native";
 import Styles from "../styles/styles";
 
 interface Timer {
@@ -7,13 +7,14 @@ interface Timer {
   minute: number;
   isRunning: boolean;
   name: string;
+  id: number;
 }
 
 const MultiTimer = () => {
   const initialTimers: Timer[] = [
-    { minute: 1, second: 10, isRunning: false, name: "Timer1" },
-    { minute: 2, second: 10, isRunning: false, name: "Timer2" },
-    { minute: 3, second: 10, isRunning: false, name: "Timer3" },
+    { id: 0, minute: 1, second: 10, isRunning: false, name: "신라면" },
+    { id: 1, minute: 2, second: 10, isRunning: false, name: "짜파게티" },
+    { id: 2, minute: 3, second: 10, isRunning: false, name: "비빔면" },
   ];
 
   // const [userInput, setUserInput] = useState(
@@ -34,7 +35,7 @@ const MultiTimer = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setTimers((prevTimers) => {
-        const newTimers = prevTimers.map((timer, index) => {
+        const newTimers = prevTimers.map((timer) => {
           if (!timer.isRunning) return timer;
 
           let { minute, second } = timer;
@@ -52,7 +53,7 @@ const MultiTimer = () => {
           if (isFinished) {
             setAlarm((prev) => {
               const updated = [...prev];
-              updated[index] = true;
+              updated[timer.id] = true;
               return updated;
             });
             return { ...timer, isRunning: false };
@@ -85,8 +86,8 @@ const MultiTimer = () => {
       const nextIndex = currentSeqIndex + 1;
       if (nextIndex < timers.length) {
         setTimers((prev) =>
-          prev.map((t, index) =>
-            index === nextIndex ? { ...t, isRunning: true } : t,
+          prev.map((timer) =>
+            timer.id === nextIndex ? { ...timer, isRunning: true } : timer,
           ),
         );
         setCurrentSeqIndex(nextIndex);
@@ -98,7 +99,7 @@ const MultiTimer = () => {
   }, [timers, currentSeqIndex, isSequentialRunning]);
 
   const handleTimerInputChange = (
-    index: number,
+    id: number,
     field: "minute" | "second" | "name",
     value: string,
   ) => {
@@ -114,16 +115,12 @@ const MultiTimer = () => {
     }
 
     setTimers((prev) =>
-      prev.map((timer, i) => {
-        if (i !== index) return timer;
+      prev.map((timer) => {
+        // if (i !== index) return timer;
 
-        if (field !== "name") {
-          if (isAllRunning || isSequentialRunning) {
-            return timer;
-          } else if (isManualRunning && timer.isRunning) {
-            return timer;
-          }
-        }
+        if (isAllRunning || isSequentialRunning || (isManualRunning && timer.isRunning)) {
+        return timer;
+      }
 
         return {
           ...timer,
@@ -136,8 +133,8 @@ const MultiTimer = () => {
   const handleToggleSingleButton = (index: number) => {
     if (displayButton) {
       setTimers((prev) =>
-        prev.map((timer, i) =>
-          i === index ? { ...timer, isRunning: !timer.isRunning } : timer,
+        prev.map((timer) =>
+          timer.id === index ? { ...timer, isRunning: !timer.isRunning } : timer,
         ),
       );
       setIsManualRunning(true);
@@ -178,7 +175,7 @@ const MultiTimer = () => {
       setCurrentSeqIndex(null);
     } else {
       setTimers((prev) =>
-        prev.map((t, index) => ({ ...t, isRunning: index === 0 })),
+        prev.map((t) => ({ ...t, isRunning: t.id === 0 })),
       );
       setIsSequentialRunning(true);
       setCurrentSeqIndex(0);
@@ -188,21 +185,30 @@ const MultiTimer = () => {
     }
   };
 
+  //   const resetTimer = (index: number) => {
+  //   const defaults = [5, 15, 25, 35, 45, 55];
+  //   setTimers((prev) => {
+  //     const newTimers = [...prev];
+  //     newTimers[index] = { second: defaults[index], isRunning: false };
+  //     return newTimers;
+  //   });
+  // };
+
   return (
     <View style={Styles.multiTimerContainer}>
-      {timers.map((timer, index) => (
+      {timers.map((timer) => (
         <View
-          key={index}
+          key={timer.id}
           style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}
         >
-          <Text>Timer {index + 1}:</Text>
+          <Text>Timer</Text>
           <TextInput
             style={{ borderWidth: 1, width: 60, padding: 5 }}
             keyboardType="numeric"
             placeholder="Min"
             value={timer.minute.toString()}
             onChangeText={(value) =>
-              handleTimerInputChange(index, "minute", value)
+              handleTimerInputChange(timer.id, "minute", value)
             }
           />
           <TextInput
@@ -211,14 +217,14 @@ const MultiTimer = () => {
             placeholder="Sec"
             value={timer.second.toString()}
             onChangeText={(value) =>
-              handleTimerInputChange(index, "second", value)
+              handleTimerInputChange(timer.id, "second", value)
             }
           />
           <TextInput
             style={{ borderWidth: 1, width: 60, padding: 5 }}
             value={timer.name}
-            onChangeText={(text) => handleTimerInputChange(index, "name", text)}
-            placeholder={`Timer ${index + 1}`}
+            onChangeText={(text) => handleTimerInputChange(timer.id, "name", text)}
+            placeholder={`Timer ${timer.id + 1}`}
           />
         </View>
       ))}
@@ -231,54 +237,66 @@ const MultiTimer = () => {
             </View>
           ))}
         </View>
-        <View style={Styles.timerContainer}>
-          {timers.slice(0, timerNumber).map((timer, index) => (
-            <View>
-              <View key={index} style={Styles.timer}>
-                {/* <Text
+        <View style={Styles.timerMainContainer}>
+          <View style={Styles.timerContainer}>
+            {timers.slice(0, timerNumber).map((timer) => (
+              <View>
+                <View key={timer.id} style={Styles.timer}>
+                  {/* <Text
                   style={Styles.text}
                 >{`${timer.name} ${String(timer.minute).padStart(2, "0")} : ${String(timer.second).padStart(2, "0")}`}</Text> */}
-                <Text style={Styles.text}>{timer.name}</Text>
-                <Text style={Styles.text}>
-                  {`${String(timer.minute).padStart(2, "0")} : ${String(timer.second).padStart(2, "0")}`}
-                </Text>
-                {alarm[index] && (
-                  <Text style={Styles.alarmText}>
-                    {timer.name} finished!
+                  <Text style={Styles.text}>{timer.name}</Text>
+                  <Text style={Styles.text}>
+                    {`${String(timer.minute).padStart(2, "0")} : ${String(timer.second).padStart(2, "0")}`}
                   </Text>
-                )}
+                  {alarm[timer.id] && (
+                    <Text style={Styles.alarmText}>{timer.name} finished!</Text>
+                  )}
 
+                  <View style={Styles.button}>
+                    {/* <Button title="Reset" onPress={() => resetTimer(i)} /> */}
+                  </View>
+                </View>
                 <View style={Styles.button}>
-                  {/* <Button title="Reset" onPress={() => resetTimer(i)} /> */}
+                  {displayButton && (
+                    <Button
+                      title={timer.isRunning ? "Pause" : "Start"}
+                      onPress={() => handleToggleSingleButton(timer.id)}
+                    />
+                  )}
                 </View>
               </View>
-              <View style={Styles.button}>
-                {displayButton && (
-                  <Button
-                    title={timer.isRunning ? "Pause" : "Start"}
-                    onPress={() => handleToggleSingleButton(index)}
-                  />
-                )}
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
+            ))}
+          </View>
+          <View style={Styles.functionalButtonContainer}>
+            <TouchableOpacity
+              onPress={handleToggleAllButton}
+              style={Styles.functionalButton}
+            >
+              <Text style={Styles.functionalButtonText}>
+                {isAllRunning ? "Pause" : "Start\n at the same time"}
+              </Text>
+            </TouchableOpacity>
 
-      <View>
-        <Button
-          onPress={handleToggleAllButton}
-          title={isAllRunning ? "Pause" : "Start at the same time"}
-        />
-        <Button
-          onPress={handleToggleSequentialButton}
-          title={isSequentialRunning ? "Pause" : "Start one after the other"}
-        />
-        <Button
-          // onPress={() => setDisplayButton(true)}
-          onPress={() => handleToggleDisplayOrStop()}
-          title={isManualRunning ? "Pause" : "Start manually"}
-        />
+            <TouchableOpacity
+              onPress={handleToggleSequentialButton}
+              style={Styles.functionalButton}
+            >
+              <Text style={Styles.functionalButtonText}>
+                {isSequentialRunning ? "Pause" : "Start\n one after the other"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleToggleDisplayOrStop}
+              style={Styles.functionalButton}
+            >
+              <Text style={Styles.functionalButtonText}>
+                {isManualRunning ? "Pause" : "Start\n manually"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </View>
   );

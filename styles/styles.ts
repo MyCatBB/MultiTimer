@@ -6,14 +6,19 @@ const Styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "black",
     borderRadius: 10,
-    width: 500,
+    width: 900,
   },
   favoriteAndTimerContainer: {
     flex: 1,
     flexDirection: "row",
   },
-  timerContainer: {
+  timerMainContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "column",
+  },
+  timerContainer: {
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
@@ -28,11 +33,30 @@ const Styles = StyleSheet.create({
     borderColor: "black",
     borderRadius: 10,
     flexDirection: "column",
-    width: 100,
+    width: 200,
   },
   button: { margin: 10 },
   text: { fontSize: 20, margin: 10 },
   alarmText: { fontSize: 20, margin: 10, color: "red" },
+  functionalButtonContainer: {
+    flexDirection: "row",
+  },
+  functionalButton: {
+    backgroundColor: "#007bff",
+    margin: 10,
+    width: 200,
+    height: 60,
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  functionalButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    flexWrap: "wrap",
+    fontSize: 18
+  }
 });
 
 export default Styles;
